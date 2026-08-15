@@ -51,13 +51,16 @@ export async function signIdToken(input: {
 }) {
   const { privateKey, publicJwk } = await keys();
   const now = Math.floor(Date.now() / 1000);
-  let token = new SignJWT(input.claims)
+  const payload = {
+    ...input.claims,
+    ...(input.nonce ? { nonce: input.nonce } : {}),
+  };
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: algorithm, typ: 'JWT', kid: publicJwk.kid })
     .setIssuer(issuer)
     .setSubject(input.subject)
     .setAudience(input.audience)
     .setIssuedAt(now)
-    .setExpirationTime(now + input.ttlSeconds);
-  if (input.nonce) token = token.setClaim('nonce', input.nonce);
-  return token.sign(privateKey);
+    .setExpirationTime(now + input.ttlSeconds)
+    .sign(privateKey);
 }
